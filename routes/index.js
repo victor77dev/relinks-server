@@ -3,6 +3,7 @@ var router = express.Router();
 
 const dlFile = require('../lib/downloadFile');
 const arXiv = require('../lib/arXivLib');
+const pdfReader = require('../lib/pdfReader');
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
@@ -52,6 +53,19 @@ router.get('/testDownloadPdfWithTitle', function(req, res, next) {
   }).catch((err) => {
     console.log(err);
     res.render('index', { title: 'Failed to get info' });
+  });
+});
+
+router.get('/testParsePdfSessions', function(req, res, next) {
+  const paperInfo = {title: 'Synthetic and Natural Noise Both Break Neural Machine Translation'};
+  const pdfFilename = paperInfo.title + '.pdf';
+  const dirPath = 'downloadFiles';
+
+  pdfReader.readPdf(pdfFilename, dirPath)
+  .then((pdfData) => {
+    res.render('index', { title: JSON.stringify(pdfData) });
+  }).catch((err) => {
+    console.log(err);
   });
 });
 
