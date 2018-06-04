@@ -4,6 +4,8 @@ var router = express.Router();
 const dlFile = require('../lib/downloadFile');
 const arXiv = require('../lib/arXivLib');
 const pdfReader = require('../lib/pdfReader');
+const articleParser = require('../lib/articleParser');
+
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
@@ -64,6 +66,26 @@ router.get('/testParsePdfSessions', function(req, res, next) {
   pdfReader.readPdf(pdfFilename, dirPath)
   .then((pdfData) => {
     res.render('index', { title: JSON.stringify(pdfData) });
+  }).catch((err) => {
+    console.log(err);
+  });
+});
+
+router.get('/testParsePdfRelatedWork', function(req, res, next) {
+  // 1. Example without related work session
+  // const paperInfo = {title: 'Synthetic and Natural Noise Both Break Neural Machine Translation'};
+  // 2. Example with related work session
+  const paperInfo = {title: 'Training and Inference with Integers in Deep Neural Networks'};
+  const pdfFilename = paperInfo.title + '.pdf';
+  const dirPath = 'downloadFiles';
+
+  pdfReader.readPdf(pdfFilename, dirPath)
+  .then((pdfData) => {
+    let relatedWork = articleParser.findRelatedWork(pdfData)
+    if (relatedWork.found)
+      res.render('index', { title: JSON.stringify(relatedWork) });
+    else
+      res.render('index', { title: 'Cannot find Related Work session' });
   }).catch((err) => {
     console.log(err);
   });
