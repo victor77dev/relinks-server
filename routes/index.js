@@ -5,6 +5,7 @@ const dlFile = require('../lib/downloadFile');
 const arXiv = require('../lib/arXivLib');
 const pdfReader = require('../lib/pdfReader');
 const articleParser = require('../lib/articleParser');
+const extractLinks = require('../lib/extractLinks');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
@@ -92,6 +93,7 @@ router.get('/testParsePdfRelatedWork', function(req, res, next) {
 });
 
 router.get('/testParseReference', function(req, res, next) {
+  // const paperInfo = {title: 'Synthetic and Natural Noise Both Break Neural Machine Translation'};
   const paperInfo = {title: 'Training and Inference with Integers in Deep Neural Networks'};
   const pdfFilename = paperInfo.title + '.pdf';
   const dirPath = 'downloadFiles';
@@ -110,6 +112,32 @@ router.get('/testParseReference', function(req, res, next) {
     }
     else
       res.render('index', { title: 'Cannot find Reference session' });
+  }).catch((err) => {
+    console.log(err);
+  });
+});
+
+router.get('/testExtractPapersFromRelatedWork', function(req, res, next) {
+  const paperInfo = {title: 'Training and Inference with Integers in Deep Neural Networks'};
+  const pdfFilename = paperInfo.title + '.pdf';
+  const dirPath = 'downloadFiles';
+
+  pdfReader.readPdf(pdfFilename, dirPath)
+  .then((pdfData) => {
+    let relatedWork = articleParser.findRelatedWork(pdfData)
+    let referenceRaw = articleParser.findReference(pdfData)
+    if (!relatedWork.found)
+      return res.render('index', { title: 'Cannot find Related work session' });
+    if (!referenceRaw.found)
+      return res.render('index', { title: 'Cannot find Reference session' });
+    let reference;
+    articleParser.parseReference(referenceRaw)
+    .then((reference) => {
+      let relatedWorkLinks = extractLinks.papersLinksInRelatedWork(paperInfo, relatedWork, reference)
+      res.render('index', { title: JSON.stringify(relatedWorkLinks) });
+    }).catch((err) => {
+      console.log(err);
+    });
   }).catch((err) => {
     console.log(err);
   });
