@@ -91,4 +91,28 @@ router.get('/testParsePdfRelatedWork', function(req, res, next) {
   });
 });
 
+router.get('/testParseReference', function(req, res, next) {
+  const paperInfo = {title: 'Training and Inference with Integers in Deep Neural Networks'};
+  const pdfFilename = paperInfo.title + '.pdf';
+  const dirPath = 'downloadFiles';
+
+  pdfReader.readPdf(pdfFilename, dirPath)
+  .then((pdfData) => {
+    let referenceRaw = articleParser.findReference(pdfData)
+    let reference;
+    if (referenceRaw.found) {
+      articleParser.parseReference(referenceRaw)
+      .then((reference) => {
+        res.render('index', { title: JSON.stringify(reference) });
+      }).catch((err) => {
+        console.log(err);
+      });
+    }
+    else
+      res.render('index', { title: 'Cannot find Reference session' });
+  }).catch((err) => {
+    console.log(err);
+  });
+});
+
 module.exports = router;
