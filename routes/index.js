@@ -331,4 +331,13 @@ router.get('/getLink', function(req, res, next) {
   })
 });
 
+router.get('/getLinkDetails', function(req, res, next) {
+  const id = req.query.id;
+  PaperLink.getPaperLinkDetailsById(id, function(err, result) {
+    if (err) console.log(err);
+    if (err || result.length === 0) res.send({error: 'Cannot get link details'});
+    res.send(result);
+  })
+});
+
 module.exports = router;

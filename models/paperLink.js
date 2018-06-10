@@ -25,6 +25,46 @@ module.exports.getPaperLinkById = function(id, callback) {
   PaperLink.findById(id, callback);
 }
 
+module.exports.getPaperLinkDetailsById = function(id, callback) {
+  let paperId = null;
+  try {
+    paperId = mongoose.Types.ObjectId(id);
+  } catch (err) {
+    return callback(err);
+  }
+  PaperLink.aggregate([
+    {
+      $match: {
+        _id: paperId
+      }
+    },
+    {
+      $lookup: {
+        from: 'details',
+        localField: '_id',
+        foreignField: '_id',
+        as: 'currentPaper'
+      }
+    },
+    {
+      $lookup: {
+        from: 'details',
+        localField: 'previous.id',
+        foreignField: '_id',
+        as: 'previousPaper'
+      }
+    },
+    {
+      $lookup: {
+        from: 'details',
+        localField: 'next.id',
+        foreignField: '_id',
+        as: 'nextPaper'
+      }
+    }
+    ], callback);
+}
+
 module.exports.addPaperLink = function(linkData, callback) {
   // 1. Add Related Paper to Current Paper 'previous'
   // Check link already exists
