@@ -22,6 +22,7 @@ var PaperDetailSchema = mongoose.Schema({
 
 PaperDetailSchema.index({'arxiv.author': 1});
 PaperDetailSchema.index({'ref.authors': 1});
+PaperDetailSchema.index({'title': 'text', 'arxiv.summary': 'text', 'arxiv.author': 'text', 'ref.authors': 'text'});
 var PaperDetail = module.exports = mongoose.model('detail', PaperDetailSchema);
 
 module.exports.getPaperById = function(id, callback) {
@@ -31,6 +32,11 @@ module.exports.getPaperById = function(id, callback) {
 module.exports.getPaperByTitle = function(title, callback) {
   let query = {title: title};
   PaperDetail.findOne(query, callback);
+}
+
+module.exports.searchPaper = function(search, limit=0, callback) {
+  let query = {$text: {$search: search}};
+  PaperDetail.find(query, callback).limit(limit);
 }
 
 module.exports.updatePaperData = function(id, data, target, callback) {

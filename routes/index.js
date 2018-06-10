@@ -307,4 +307,12 @@ router.get('/addPaper', function(req, res, next) {
   });
 });
 
+router.get('/searchPaper', function(req, res, next) {
+  const search = req.query.search;
+  let limit = 5;
+  PaperDetail.searchPaper(search, limit, function(err, result) {
+    res.send(result);
+  })
+});
+
 module.exports = router;
