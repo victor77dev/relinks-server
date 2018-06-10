@@ -25,80 +25,98 @@ module.exports.getPaperLinkById = function(id, callback) {
   PaperLink.findById(id, callback);
 }
 
-module.exports.addPaperLink = function(ids, callback) {
+module.exports.addPaperLink = function(linkData, callback) {
   // 1. Add Related Paper to Current Paper 'previous'
   // Check link already exists
-  let addPreviousPromise = PaperLink.findOne({_id: ids.current, previous: {$elemMatch: {id: ids.previous}}}, function(err, link) {
-    if (err) throw err;
-    if (link !== null)
-      return Promise.resolve(link);
-    // Add link if current paper exists
-    PaperLink.findByIdAndUpdate(ids.current, {$push: {previous: {id: ids.previous}}}, function(err, link) {
+  let addPreviousPromise = new Promise(function(resolve, reject) {
+    PaperLink.findOneAndUpdate({_id: linkData.current, previous: {$elemMatch: {id: linkData.previous}}}, {
+      $set: {'previous.$.details': linkData.details}
+    }, function(err, link) {
       if (err) throw err;
       if (link !== null)
-        return Promise.resolve(link);
-      // Add current paper to db if not exists
-      let newPaperLink = new PaperLink({
-        _id: ids.current,
-        previous: [{id: ids.previous}],
-      });
-      newPaperLink.save(function(err, link) {
-        if (err === null)
-          return Promise.resolve(link);
-        if (err.code === 11000) {
-          let query = {_id: ids.current, previous: {$elemMatch: {id: ids.previous}}};
-          PaperLink.findOne(query, function(err, link) {
-            if (err) throw err;
-            if (link !== null)
-              return Promise.reject({err: {linkExist: true, error: 'Duplicate link', _id: link._id}, link: {_id: link._id}});
-            else
-              // Retry add link as there maybe concurrent creation happened
-              PaperLink.findByIdAndUpdate(ids.current, {$push: {previous: {id: ids.previous}}}, function(err, link) {
-                if (err) throw err;
-                if (link !== null)
-                  return Promise.resolve(link);
-              });
-          });
-        } else
-          throw err;
+        return resolve(link);
+      // Add link if current paper exists
+      PaperLink.findByIdAndUpdate(linkData.current, {$push: {previous: {
+        id: linkData.previous,
+        details: linkData.details
+      }}}, function(err, link) {
+        if (err) throw err;
+        if (link !== null)
+          return resolve(link);
+        // Add current paper to db if not exists
+        let newPaperLink = new PaperLink({
+          _id: linkData.current,
+          previous: [{id: linkData.previous, details: linkData.details}],
+        });
+        newPaperLink.save(function(err, link) {
+          if (err === null)
+            return resolve(link);
+          if (err.code === 11000) {
+            let query = {_id: linkData.current, previous: {$elemMatch: {id: linkData.previous}}};
+            PaperLink.findOne(query, function(err, link) {
+              if (err) throw err;
+              if (link !== null)
+                return reject({err: {linkExist: true, error: 'Duplicate link', _id: link._id}, link: {_id: link._id}});
+              else
+                // Retry add link as there maybe concurrent creation happened
+                PaperLink.findByIdAndUpdate(linkData.current, {$push: {previous: {
+                  id: linkData.previous,
+                  details: linkData.details
+                }}}, function(err, link) {
+                  if (err) throw err;
+                  if (link !== null)
+                    return resolve(link);
+                });
+            });
+          } else
+            throw err;
+        });
       });
     });
   });
   // 2. Add Current Paper to Related Paper 'next'
   // Check link already exists
-  let addNextPromise = PaperLink.findOne({_id: ids.previous, next: {$elemMatch: {id: ids.current}}}, function(err, link) {
-    if (err) throw err;
-    if (link !== null)
-      return Promise.resolve(link);
-    // Add link if related paper exists
-    PaperLink.findByIdAndUpdate(ids.previous, {$push: {next: {id: ids.current}}}, function(err, link) {
+  let addNextPromise = new Promise(function(resolve, reject) {
+    PaperLink.findOne({_id: linkData.previous, next: {$elemMatch: {id: linkData.current}}}, function(err, link) {
       if (err) throw err;
       if (link !== null)
-        return Promise.resolve(link);
-      // Add related paper to db if not exists
-      let newPaperLink = new PaperLink({
-        _id: ids.previous,
-        next: [{id: ids.current}],
-      });
-      newPaperLink.save(function(err, link) {
-        if (err === null)
-          return Promise.resolve(link);
-        if (err.code === 11000) {
-          let query = {_id: ids.current, next: {$elemMatch: {id: ids.current}}};
-          PaperLink.findOne(query, function(err, link) {
-            if (err) throw err;
-            if (link !== null)
-              return Promise.reject({err: {linkExist: true, error: 'Duplicate link', _id: link._id}, link: {_id: link._id}});
-            else
-              // Retry add link as there maybe concurrent creation happened
-              PaperLink.findByIdAndUpdate(ids.previous, {$push: {next: {id: ids.current}}}, function(err, link) {
-                if (err) throw err;
-                if (link !== null)
-                  return Promise.resolve(link);
-              });
-          });
-        } else
-          throw err;
+        return resolve(link);
+      // Add link if related paper exists
+      PaperLink.findByIdAndUpdate(linkData.previous, {$push: {next: {
+          id: linkData.current,
+          details: linkData.details
+      }}}, function(err, link) {
+        if (err) throw err;
+        if (link !== null)
+          return resolve(link);
+        // Add related paper to db if not exists
+        let newPaperLink = new PaperLink({
+          _id: linkData.previous,
+          next: [{id: linkData.current, details: linkData.details}],
+        });
+        newPaperLink.save(function(err, link) {
+          if (err === null)
+            return resolve(link);
+          if (err.code === 11000) {
+            let query = {_id: linkData.current, next: {$elemMatch: {id: linkData.current}}};
+            PaperLink.findOne(query, function(err, link) {
+              if (err) throw err;
+              if (link !== null)
+                return reject({err: {linkExist: true, error: 'Duplicate link', _id: link._id}, link: {_id: link._id}});
+              else
+                // Retry add link as there maybe concurrent creation happened
+                PaperLink.findByIdAndUpdate(linkData.previous, {$push: {next: {
+                  id: linkData.current,
+                  details: linkData.details
+                }}}, function(err, link) {
+                  if (err) throw err;
+                  if (link !== null)
+                    return resolve(link);
+                });
+            });
+          } else
+            throw err;
+        });
       });
     });
   });

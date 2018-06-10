@@ -187,13 +187,23 @@ router.get('/addPaper', function(req, res, next) {
           let addAllRelatedPaperPromise = [];
           // Add Paper Detail Record for found Related Paper
           for (let relatedPaper of relatedWorkLinks.previous) {
+            // Move foundParagraph and refIndex to PaperLinks
+            let linksDetail = {};
+            if ('foundParagraph' in relatedPaper) {
+              linksDetail.foundParagraph = relatedPaper.foundParagraph.string;
+              delete relatedPaper.foundParagraph;
+            }
+            if ('refIndex' in relatedPaper) {
+              linksDetail.refIndex = relatedPaper.refIndex;
+              delete relatedPaper.refIndex;
+            }
             // Creating deffered promise for adding paper id
             let addIdDeferred = {};
             let addPaperDetailId = new Promise(function(resolve, reject) {
               addIdDeferred = {resolve: resolve, reject: reject};
             });
+            let currentRelatedPaperId = null;
             let paperDetailDbPromise = new Promise(function(resolve, reject) {
-              let currentRelatedPaperId = null;
               // TODO: Check the closest name
               let paperTitle = relatedPaper.title;
               PaperDetail.addPaper({title: paperTitle, ref: relatedPaper}, function(err, paper) {
@@ -206,7 +216,7 @@ router.get('/addPaper', function(req, res, next) {
                   currentRelatedPaperId = paper._id;
                 // Resolve after getting PaperDetail id and trigger PaperLink insert data
                 if (currentRelatedPaperId !== null)
-                  addIdDeferred.resolve({current: paperDetailId, previous: currentRelatedPaperId});
+                  addIdDeferred.resolve({current: paperDetailId, previous: currentRelatedPaperId, details: linksDetail});
 
                 // Find Related Paper from arXiv
                 arXiv.getInfo(paperTitle).then((paperInfo) => {
@@ -233,8 +243,8 @@ router.get('/addPaper', function(req, res, next) {
 
             // Add Paper Links for Related Papers
             let paperLinkDbPromise = new Promise(function(resolve, reject) {
-              addPaperDetailId.then((ids) => {
-                return PaperLink.addPaperLink(ids, function(err, link) {
+              addPaperDetailId.then((linkData) => {
+                return PaperLink.addPaperLink(linkData, function(err, link) {
                   if (err) return Promise.reject({id: currentRelatedPaperId, errCode: 111, error: err});
                   return resolve({link: link});
                 });
