@@ -315,4 +315,20 @@ router.get('/searchPaper', function(req, res, next) {
   })
 });
 
+router.get('/getPaper', function(req, res, next) {
+  const id = req.query.id;
+  PaperDetail.getPaperById(id, function(err, result) {
+    if (err) res.send(err);
+    res.send(result);
+  })
+});
+
+router.get('/getLink', function(req, res, next) {
+  const id = req.query.id;
+  PaperLink.getPaperLinkById(id, function(err, result) {
+    if (err) res.send(err);
+    res.send(result);
+  })
+});
+
 module.exports = router;
