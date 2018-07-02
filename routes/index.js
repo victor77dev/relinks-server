@@ -13,7 +13,7 @@ const PaperLink = require('../models/paperLink');
 
 /* GET home page. */
 router.get('/', function(req, res, next) {
-  res.render('index', { title: 'Express' });
+  return res.render('index', { title: 'Express' });
 });
 
 router.get('/testDownloadFile', function(req, res, next) {
@@ -23,10 +23,10 @@ router.get('/testDownloadFile', function(req, res, next) {
   let filename = 'testing.pdf';
   dlFile.downloadFile(url, filename, dirPath).then((msg) => {
     console.log(msg);
-    res.render('index', { title: 'Downloaded link' });
+    return res.render('index', { title: 'Downloaded link' });
   }).catch((err) => {
     console.log(err);
-    res.render('index', { title: 'Failed to download link' });
+    return res.render('index', { title: 'Failed to download link' });
   })
 });
 
@@ -34,10 +34,10 @@ router.get('/testGetPaperInfo', function(req, res, next) {
   // Testing get paper info from arXiv using paper title
   const paperTitle = 'Synthetic and Natural Noise Both Break Neural Machine Translation';
   arXiv.getInfo(paperTitle).then((paperInfo) => {
-    res.render('index', { title: JSON.stringify(paperInfo) });
+    return res.render('index', { title: JSON.stringify(paperInfo) });
   }).catch((err) => {
     console.log(err);
-    res.render('index', { title: 'Failed to get paper info' });
+    return res.render('index', { title: 'Failed to get paper info' });
   })
 });
 
@@ -49,17 +49,17 @@ router.get('/testDownloadPdfWithTitle', function(req, res, next) {
     const pdfFilename = paperInfo.title + '.pdf';
     const dirPath = 'downloadFiles';
     if (pdfLink === null)
-      res.render('index', { title: 'Failed to find pdf link' });
+      return res.render('index', { title: 'Failed to find pdf link' });
     dlFile.downloadFile(pdfLink, pdfFilename, dirPath).then((msg) => {
       console.log(msg);
-      res.render('index', { title: 'Downloaded pdf' });
+      return res.render('index', { title: 'Downloaded pdf' });
     }).catch((err) => {
       console.log(err);
-      res.render('index', { title: 'Failed to download from link' });
+      return res.render('index', { title: 'Failed to download from link' });
     })
   }).catch((err) => {
     console.log(err);
-    res.render('index', { title: 'Failed to get info' });
+    return res.render('index', { title: 'Failed to get info' });
   });
 });
 
@@ -70,7 +70,7 @@ router.get('/testParsePdfSessions', function(req, res, next) {
 
   pdfReader.readPdf(pdfFilename, dirPath)
   .then((pdfData) => {
-    res.render('index', { title: JSON.stringify(pdfData) });
+    return res.render('index', { title: JSON.stringify(pdfData) });
   }).catch((err) => {
     console.log(err);
   });
@@ -88,9 +88,9 @@ router.get('/testParsePdfRelatedWork', function(req, res, next) {
   .then((pdfData) => {
     let relatedWork = articleParser.findRelatedWork(pdfData)
     if (relatedWork.found)
-      res.render('index', { title: JSON.stringify(relatedWork) });
+      return res.render('index', { title: JSON.stringify(relatedWork) });
     else
-      res.render('index', { title: 'Cannot find Related Work session' });
+      return res.render('index', { title: 'Cannot find Related Work session' });
   }).catch((err) => {
     console.log(err);
   });
@@ -109,13 +109,13 @@ router.get('/testParseReference', function(req, res, next) {
     if (referenceRaw.found) {
       articleParser.parseReference(referenceRaw)
       .then((reference) => {
-        res.render('index', { title: JSON.stringify(reference) });
+        return res.render('index', { title: JSON.stringify(reference) });
       }).catch((err) => {
         console.log(err);
       });
     }
     else
-      res.render('index', { title: 'Cannot find Reference session' });
+      return res.render('index', { title: 'Cannot find Reference session' });
   }).catch((err) => {
     console.log(err);
   });
@@ -138,7 +138,7 @@ router.get('/testExtractPapersFromRelatedWork', function(req, res, next) {
     articleParser.parseReference(referenceRaw)
     .then((reference) => {
       let relatedWorkLinks = extractLinks.papersLinksInRelatedWork(paperInfo, relatedWork, reference)
-      res.render('index', { title: JSON.stringify(relatedWorkLinks) });
+      return res.render('index', { title: JSON.stringify(relatedWorkLinks) });
     }).catch((err) => {
       console.log(err);
     });
@@ -279,7 +279,7 @@ router.get('/addPaper', function(req, res, next) {
               if ('errCode' in result && result.errCode === 333)
                 error.push(result);
             }
-            res.send({
+            return res.send({
               relatedPaper: relatedPaper,
               link: link,
               dbError: dbError,
@@ -311,23 +311,23 @@ router.get('/searchPaper', function(req, res, next) {
   const search = req.query.search;
   let limit = 5;
   PaperDetail.searchPaper(search, limit, function(err, result) {
-    res.send(result);
+    return res.send(result);
   })
 });
 
 router.get('/getPaper', function(req, res, next) {
   const id = req.query.id;
   PaperDetail.getPaperById(id, function(err, result) {
-    if (err) res.send(err);
-    res.send(result);
+    if (err) return res.send(err);
+    return res.send(result);
   })
 });
 
 router.get('/getLink', function(req, res, next) {
   const id = req.query.id;
   PaperLink.getPaperLinkById(id, function(err, result) {
-    if (err) res.send(err);
-    res.send(result);
+    if (err) return res.send(err);
+    return res.send(result);
   })
 });
 
@@ -335,8 +335,8 @@ router.get('/getLinkDetails', function(req, res, next) {
   const id = req.query.id;
   PaperLink.getPaperLinkDetailsById(id, function(err, result) {
     if (err) console.log(err);
-    if (err || result.length === 0) res.send({error: 'Cannot get link details'});
-    res.send(result);
+    if (err || result.length === 0) return res.send({error: 'Cannot get link details'});
+    return res.send(result);
   })
 });
 
