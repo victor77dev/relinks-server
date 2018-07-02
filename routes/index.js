@@ -340,4 +340,31 @@ router.get('/getLinkDetails', function(req, res, next) {
   })
 });
 
+router.get('/updatePaperArxiv', function(req, res, next) {
+  const paperId = req.query.paperId;
+  const paperInfo = JSON.parse(req.query.paperInfo);
+  PaperDetail.updatePaperArxiv(paperId, paperInfo.arxiv[0], function(err, paper) {
+    if (err) return reject({id: paperId, errCode: 111, msg: 'Failed to update arXiv data', error: err});
+    return res.send({id: paperId, paper: paper});
+  });
+});
+
+router.get('/updatePaperRef', function(req, res, next) {
+  const paperId = req.query.paperId;
+  const paperInfo = JSON.parse(req.query.paperInfo);
+  PaperDetail.updatePaperRef(paperId, paperInfo.ref[0], function(err, paper) {
+    if (err) return reject({id: paperId, errCode: 111, msg: 'Failed to update ref data', error: err});
+    return res.send({id: paperId, paper: paper});
+  });
+});
+
+router.get('/updatePaper', function(req, res, next) {
+  const paperId = req.query.paperId;
+  const paperInfo = JSON.parse(req.query.paperInfo);
+  PaperDetail.updatePaperData(paperId, paperInfo, ['ref', 'arxiv', 'title'], function(err, paper) {
+    if (err) return reject({id: paperId, errCode: 111, msg: 'Failed to update paper data', error: err});
+    return res.send({id: paperId, paper: paper});
+  });
+});
+
 module.exports = router;

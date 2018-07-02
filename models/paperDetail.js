@@ -52,31 +52,52 @@ module.exports.updatePaperData = function(id, data, target, callback) {
     // Data is not the same as latest one, Need update.
     PaperDetail.findById(id, function(err, paper) {
       if (err) throw err;
-      let updateData = Object.assign({}, paper[target].slice(-1)[0], data);
-      // Check if it is the same
-      // Simple check if there is modification using JSON.stringify
-      if (JSON.stringify(updateData) === JSON.stringify(paper[target].slice(-1)[0]))
+      let sameData = true;
+      let titleData;
+      const pushData = target.reduce((allUpdate, curTarget) => {
+        let updateData = null;
+        if (typeof(data[curTarget]) === 'object')
+          updateData = Object.assign({}, paper[curTarget].slice(-1)[0], data[curTarget].slice(-1)[0]);
+        else if (curTarget === 'title' && paper['title'] !== data[curTarget]) {
+          titleData = {title: data[curTarget]};
+          sameData = false;
+        }
+        // Check if it is the same
+        // Simple check if there is modification using JSON.stringify
+        if (JSON.stringify(updateData) !== JSON.stringify(paper[curTarget].slice(-1)[0])) {
+          sameData = false;
+          if (updateData !== null && (Object.keys(updateData).length !== 0 || updateData.constructor !== Object))
+            allUpdate[curTarget] = updateData;
+        }
+        return allUpdate;
+      }, {});
+      if (sameData || (Object.keys(pushData).length === 0 && pushData.constructor === Object))
         return callback(null, {updated: false, paper: paper});
       // Update target data
-      PaperDetail.findByIdAndUpdate(id, {$push: {[target]: updateData}}, function(err, paper) {
+      PaperDetail.findByIdAndUpdate(id, {$push: pushData, $set: titleData}, function(err, paper) {
         if (err) throw err;
-        // Keep max history
-        if (paper[target].length > maxHistory)
-        PaperDetail.findByIdAndUpdate(id, {$pop: {[target]: -1}}, function(err, paper) {
-          if (err) throw err;
-          return callback(null, {updated: true, paper: paper});
+        const pushData = target.every((curTarget) => {
+          if (typeof(paper[curTarget]) === 'object') {
+            // Keep max history
+            if (paper[curTarget].length > maxHistory) {
+              PaperDetail.findByIdAndUpdate(id, {$pop: {[curTarget]: -1}}, function(err, paper) {
+                if (err) throw err;
+              });
+            }
+          }
         });
+        return callback(null, {updated: true, paper: paper});
       });
     });
   });
 }
 
 module.exports.updatePaperRef = function(id, data, callback) {
-  this.updatePaperData(id, data, 'ref', callback);
+  this.updatePaperData(id, data, ['ref'], callback);
 }
 
 module.exports.updatePaperArxiv = function(id, data, callback) {
-  this.updatePaperData(id, data, 'arxiv', callback);
+  this.updatePaperData(id, data, ['arxiv'], callback);
 }
 
 module.exports.addPaper = function(paperInfo, callback) {
