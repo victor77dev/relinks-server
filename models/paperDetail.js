@@ -40,7 +40,8 @@ module.exports.searchPaper = function(search, limit=0, callback) {
 }
 
 module.exports.updatePaperData = function(id, data, target, callback) {
-  PaperDetail.findOne({_id: id, [target]: {$elemMatch: data}}, function(err, paper) {
+  let query = (target.length === 1 && target[0] === 'title') ? data.title : {$elemMatch: data};
+  PaperDetail.findOne({_id: id, [target]: query}, function(err, paper) {
     if (err) throw err;
     // Check if need to update
     if (paper !== null) {
@@ -53,14 +54,17 @@ module.exports.updatePaperData = function(id, data, target, callback) {
     PaperDetail.findById(id, function(err, paper) {
       if (err) throw err;
       let sameData = true;
-      let titleData;
+      let titleData = null;
       const pushData = target.reduce((allUpdate, curTarget) => {
+        if (paper[curTarget] === null || paper[curTarget].length === 0)
+          return allUpdate;
         let updateData = null;
         if (typeof(data[curTarget]) === 'object')
           updateData = Object.assign({}, paper[curTarget].slice(-1)[0], data[curTarget].slice(-1)[0]);
         else if (curTarget === 'title' && paper['title'] !== data[curTarget]) {
           titleData = {title: data[curTarget]};
           sameData = false;
+          return allUpdate;
         }
         // Check if it is the same
         // Simple check if there is modification using JSON.stringify
@@ -71,10 +75,15 @@ module.exports.updatePaperData = function(id, data, target, callback) {
         }
         return allUpdate;
       }, {});
-      if (sameData || (Object.keys(pushData).length === 0 && pushData.constructor === Object))
+      let updateQuery = {};
+      if (titleData !== null)
+        updateQuery['$set'] = titleData;
+      if (Object.keys(pushData).length !== 0 || pushData.constructor !== Object)
+        updateQuery['$push'] = pushData;
+      if (sameData || Object.keys(updateQuery).length === 0)
         return callback(null, {updated: false, paper: paper});
       // Update target data
-      PaperDetail.findByIdAndUpdate(id, {$push: pushData, $set: titleData}, function(err, paper) {
+      PaperDetail.findByIdAndUpdate(id, updateQuery, function(err, paper) {
         if (err) throw err;
         const pushData = target.every((curTarget) => {
           if (typeof(paper[curTarget]) === 'object') {
