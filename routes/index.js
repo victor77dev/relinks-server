@@ -367,4 +367,15 @@ router.get('/updatePaper', function(req, res, next) {
   });
 });
 
+router.get('/getPaperInfoFromArxiv', function(req, res, next) {
+  // Testing get paper info from arXiv using paper title
+  const { title } = req.query;
+  arXiv.getInfo(title, { showAll: true }).then((paperInfo) => {
+    return res.send({ title: title, paper: paperInfo });
+  }).catch((err) => {
+    console.log(err);
+    return res.send({ title: title, error: 'Failed to get paper info from arXiv' });
+  })
+});
+
 module.exports = router;
