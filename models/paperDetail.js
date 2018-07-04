@@ -132,9 +132,9 @@ module.exports.addPaper = function(paperInfo, callback) {
       return callback(err, paper);
     if (err.code === 11000) {
       let query = {title: paperTitle};
-      PaperDetail.findOne(query, function(err, paper) {
+      PaperDetail.findOneAndUpdate(query, {title: paperTitle, arxiv: paperInfo.arxiv, ref: paperInfo.ref}, function(err, paper) {
         if (err) throw err;
-        return callback({paperExist: true, error: 'Duplicate paper title', _id: paper._id}, {_id: paper._id});
+        return callback(err, paper);
       });
     } else
       throw err;
