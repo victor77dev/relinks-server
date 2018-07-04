@@ -148,7 +148,7 @@ router.get('/testExtractPapersFromRelatedWork', function(req, res, next) {
 });
 
 router.get('/addPaper', function(req, res, next) {
-  const title = req.query.title;
+  const { title, paperId } = req.query;
   let paperExist = false;
   // Get Paper Info with title
   arXiv.getInfo(title).then((paperInfo) => {
@@ -156,14 +156,30 @@ router.get('/addPaper', function(req, res, next) {
     const pdfTitle = paperInfo.title;
     // Save Paper Info to db (PaperDetail)
     let paperDetailId = null;
-    PaperDetail.addPaper({title: pdfTitle, arxiv: paperInfo}, function(err, paper) {
-      if (err) {
-        paperExist = err.paperExist;
-        if (paperExist)
+    // Update title if paperId exist and the title is different
+    if (paperId) {
+      PaperDetail.updatePaperData(paperId, {title: pdfTitle}, ['title'], function(err, paper) {
+        if (err) return reject({id: paperId, errCode: 111, msg: 'Failed to update paper title', error: err});
+        PaperDetail.addPaper({title: pdfTitle, arxiv: paperInfo}, function(err, paper) {
+          if (err) {
+            paperExist = err.paperExist;
+            if (paperExist)
+              paperDetailId = paper._id;
+          } else
+            paperDetailId = paper._id;
+        });
+      });
+    } else {
+      PaperDetail.addPaper({title: pdfTitle, arxiv: paperInfo}, function(err, paper) {
+        if (err) {
+          paperExist = err.paperExist;
+          if (paperExist)
+            paperDetailId = paper._id;
+        } else
           paperDetailId = paper._id;
-      } else
-        paperDetailId = paper._id;
-    });
+      });
+    }
+
     const pdfFilename = paperInfo.pdf.split('/').pop() + '.pdf';
     const dirPath = 'downloadFiles';
     if (pdfLink === null)
