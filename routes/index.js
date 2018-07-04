@@ -46,7 +46,7 @@ router.get('/testDownloadPdfWithTitle', function(req, res, next) {
   const paperTitle = 'Synthetic and Natural Noise Both Break Neural Machine Translation';
   arXiv.getInfo(paperTitle).then((paperInfo) => {
     const pdfLink = paperInfo.pdf;
-    const pdfFilename = paperInfo.title + '.pdf';
+    const pdfFilename = paperInfo.pdf.split('/').pop() + '.pdf';
     const dirPath = 'downloadFiles';
     if (pdfLink === null)
       return res.render('index', { title: 'Failed to find pdf link' });
@@ -164,7 +164,7 @@ router.get('/addPaper', function(req, res, next) {
       } else
         paperDetailId = paper._id;
     });
-    const pdfFilename = paperInfo.title + '.pdf';
+    const pdfFilename = paperInfo.pdf.split('/').pop() + '.pdf';
     const dirPath = 'downloadFiles';
     if (pdfLink === null)
       return res.send({paperExist: paperExist, error: 'Failed to find pdf link'});
