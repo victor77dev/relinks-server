@@ -183,7 +183,7 @@ router.get('/addPaper', function(req, res, next) {
     const pdfFilename = paperInfo.pdf.split('/').pop() + '.pdf';
     const dirPath = 'downloadFiles';
     if (pdfLink === null)
-      return res.send({paperExist: paperExist, error: 'Failed to find pdf link'});
+      return res.send({paperId: paperDetailId, paperExist: paperExist, error: 'Failed to find pdf link'});
     // Download paper from arXiv
     dlFile.downloadFile(pdfLink, pdfFilename, dirPath).then((msg) => {
       console.log(msg);
@@ -193,9 +193,9 @@ router.get('/addPaper', function(req, res, next) {
         let relatedWork = articleParser.findRelatedWork(pdfData)
         let referenceRaw = articleParser.findReference(pdfData)
         if (!relatedWork.found)
-          return res.send({paperExist: paperExist, error: 'Cannot find Related work session' });
+          return res.send({paperId: paperDetailId, paperExist: paperExist, error: 'Cannot find Related work session' });
         if (!referenceRaw.found)
-          return res.send({paperExist: paperExist, error: 'Cannot find Reference session' });
+          return res.send({paperId: paperDetailId, paperExist: paperExist, error: 'Cannot find Reference session' });
         // Get Related Papers Info from Reference
         articleParser.parseReference(referenceRaw)
         .then((reference) => {
@@ -296,6 +296,7 @@ router.get('/addPaper', function(req, res, next) {
                 error.push(result);
             }
             return res.send({
+              paperId: paperDetailId,
               relatedPaper: relatedPaper,
               link: link,
               dbError: dbError,
@@ -315,11 +316,11 @@ router.get('/addPaper', function(req, res, next) {
       });
     }).catch((err) => {
       console.log(err);
-      return res.send({paperExist: paperExist, error: 'Failed to download from link'});
+      return res.send({paperId: paperDetailId, paperExist: paperExist, error: 'Failed to download from link'});
     })
   }).catch((err) => {
     console.log(err);
-    return res.send({paperExist: paperExist, error: 'Failed to get info'});
+    return res.send({paperId: paperDetailId, paperExist: paperExist, error: 'Failed to get info'});
   });
 });
 
