@@ -23,3 +23,6 @@ Client code: https://github.com/victor77dev/relinks-client
    > for finding papers and download papers (pdf and info)
 * FreeCite api (http://freecite.library.brown.edu)
    > for parsing paper info from reference
+
+## Api Doc
+[Api doc](api-doc.md)
