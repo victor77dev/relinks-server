@@ -150,12 +150,12 @@ router.get('/testExtractPapersFromRelatedWork', function(req, res, next) {
 router.get('/addPaper', function(req, res, next) {
   const { title, paperId } = req.query;
   let paperExist = false;
+  let paperDetailId = null;
   // Get Paper Info with title
   arXiv.getInfo(title).then((paperInfo) => {
     const pdfLink = paperInfo.pdf;
     const pdfTitle = paperInfo.title;
     // Save Paper Info to db (PaperDetail)
-    let paperDetailId = null;
     // Update title if paperId exist and the title is different
     if (paperId) {
       PaperDetail.updatePaperData(paperId, {title: pdfTitle}, ['title'], function(err, paper) {
